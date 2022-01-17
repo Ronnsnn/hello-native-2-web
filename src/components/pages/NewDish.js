@@ -1,6 +1,10 @@
 import { useFormik } from "formik"
 import * as Yup from "yup"
+import { collection, addDoc } from 'firebase/firestore';
+import { useFirestore } from 'reactfire';
+
 const NewDish = () => {
+  const dishesRef = collection(useFirestore(), 'dishes')
 
   const formik = useFormik({
     initialValues: {
@@ -14,7 +18,7 @@ const NewDish = () => {
       name: Yup.string()
         .min(3,'Los platillos deben tener al menos 3 caracteres')
         .required('El nombre del platillo es requerido'),
-      precio: Yup.number()
+      price: Yup.number()
         .min(1,'Debes agregar un número')
         .required('El precio del platillo es requerido'),
       category: Yup.string()
@@ -23,8 +27,16 @@ const NewDish = () => {
         .min(10,'La descripción debe ser más larga')
         .required('La categoría del platillo es requerida'),
     }),
-    onSubmit: (data) => {
-      console.log(data)
+    onSubmit: async (data) => {
+      try {
+        console.log(data) 
+        await addDoc(dishesRef, data)
+        
+      }catch (err) {
+        console.log(err)
+      }
+
+
     }
   })
 
@@ -125,7 +137,7 @@ const NewDish = () => {
             <div className="mb-4">
               <label
                 className="block text-gray-700 text-sm font-bold mb-2"
-                htmlFor="Precio">
+                htmlFor="Imagen">
                 Imagen
               </label>
               <input
