@@ -1,10 +1,15 @@
 import { useFormik } from "formik"
 import * as Yup from "yup"
-import { collection, addDoc } from 'firebase/firestore';
-import { useFirestore } from 'reactfire';
+import { collection, addDoc } from 'firebase/firestore'
+import { useFirestore, useStorage } from 'reactfire'
+import { useNavigate } from "react-router-dom"
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage"
 
 const NewDish = () => {
-  const dishesRef = collection(useFirestore(), 'dishes')
+  const firestore = useFirestore()
+  const storage = useStorage()
+  const navigate = useNavigate()
+  const handleImgChange = (e) => formik.setFieldValue('image', e.currentTarget.files[0])
 
   const formik = useFormik({
     initialValues: {
@@ -29,14 +34,18 @@ const NewDish = () => {
     }),
     onSubmit: async (data) => {
       try {
-        console.log(data) 
+        const dishesRef = collection(firestore, 'dishes')
+        const storageRef  = ref(storage,`dishes/${Date.now()}/${data.image.name}`)
+        const uploadTask = await uploadBytes(storageRef, data.image, {contentType:'image/jpeg'});
+        const imgData = await getDownloadURL(uploadTask.ref)
+        data.inStock = true
+        data.image = imgData 
         await addDoc(dishesRef, data)
-        
-      }catch (err) {
+        // TODO: add progess data
+        navigate('/menu')
+      } catch (err) {
         console.log(err)
       }
-
-
     }
   })
 
@@ -144,8 +153,8 @@ const NewDish = () => {
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 id="image"
                 name="image"
-                value={formik.values.image}
-                onChange={formik.handleChange}
+                value={undefined}
+                onChange={handleImgChange}
                 type="file"
               />
               
